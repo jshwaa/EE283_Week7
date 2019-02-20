@@ -1,0 +1,469 @@
+##############################
+##  DATA
+##############################
+# on hpc
+/bio/share/Bioinformatics_Course.tar
+cp to your directory, untar, and tree
+
+###############################
+##  Week 1
+###############################
+
+# raw data, cp to your dir, untar
+/bio/share/Bioinformatics_Course.tar
+
+###  Where the data comes from
+###  There is a readme in each subfolder
+
+i) organize "the data".  Think about the next steps...
+I would use a python script and "shutil.copy", but the cool kids can try to do it with symlinks
+DNAseq and ATACseq
+
+- data
+	- sample name 1
+		- DNA
+		- ATAC
+	- sample name 2
+		
+RNAseq
+
+- Should be a reproducible documented script
+- Maybe rename files?
+- might be easiest is python
+- you could also have a "table" mapping sample names to "treatments" and do the "renaming" in DEseq
+
+ii)  do some qc on one raw data file using fastqc
+
+modulefind fastqc
+module load fastqc/0.11.2 
+fastqc --help
+
+#perl fastqFormatDetect.pl ADL01.sample.fastq    (note the non-gzipped file...)
+#This file looks like Solexa/Illumina1.3+/Illumina1.5+ format.
+# likely best to convert to a modern format
+#e.g., seqtk seq -Q64 -V  Read1.fastq > Read1.sanger.fastq
+#modulefind bwa
+#modulefind seqtk
+# darn it
+#https://github.com/lh3/seqtk
+#git clone https://github.com/lh3/seqtk.git
+# maybe ... modulefind git
+#cd seqtk; make
+#  (maybe Edwin can do something on rolling your own modules!  This is what the big boys do)
+#/home/tdlong/raid/seqtk/seqtk seq -Q64 -V  Read1.fq.gz | gzip -c > out.fq.gz
+
+
+
+###############################
+##  Week 2
+###############################
+
+# index your reference genome first, best do this for all the indexes you are like to need 
+# I put these in "ref"
+# write a script, submit to queue
+# you will have to complete each command
+
+#!/bin/bash
+#$ -N index
+#$ -q bio,pub64
+
+module load bwa/0.7.8
+module load samtools/1.3
+module load bcftools/1.3
+module load enthought_python/7.3.2
+module load gatk/2.4-7
+module load picard-tools/1.87
+module load java/1.7
+
+ref="ref/Dmel-r6.13..."
+bwa index $ref
+samtools faidx  $ref
+java -d64 -Xmx128g -jar /data/apps/picard-tools/1.87/CreateSequenceDictionary.jar R=$ref O=ref/Dmel-r6.13 ....dict
+bowtie2-build $ref
+
+
+# Align your data!  Now the directory structure helps you
+
+- do each sample in parallel using a shell script
+- you may want a shell script or python program to generate "$file"
+- below are some "hints" you will have to change *some* filenames to variables!
+- I would make sure I can run each caller on a single small pair of files before writing a shell script
+	- zcat blah.blah.F.fq.gz | head -n 1000000 | gzip -c > test.F.fq.gz
+	- zcat blah.blah.R.fq.gz | head -n 1000000 | gzip -c > test.R.fq.gz
+- these 250K read pair files will run very quickly ... even from a qrsh shell to debug
+	
+
+how many tasks?
+with make 8 you want -R set to yes.
+
+#!/bin/bash
+#$ -N myscript
+#$ -q tony-class
+#$ -pe make 8 
+#$ -R y
+#$ -t 1-[??]
+
+module load -- what do I have to load, versions, versions, versions
+
+# or pass the file name to the shell script, how would I do this?
+file=?? 
+# here is a hint if you had a tab delimited input file
+rawfix=`head -n $SGE_TASK_ID $file | tail -n 1 | cut -f1` 
+prefix=`head -n $SGE_TASK_ID $file | tail -n 1 | cut -f2` 
+
+# bwa mem alignments
+# you need to add readgroups to merge and use GATK
+# reference_genome, READ1.fq.gz, READ2.fq.gz, folder should likely all be shell variables
+
+# one more thing to think about you can't just step through each fq.gz file, you have to step through each PAIR!!
+
+ls *1.fq.gz | sed 's/_1.fq.gz//' >DNAseq.prefixes.txt  # outside the array
+prefix=`head -n $SGE_TASK_ID DNAseq.prefixes.txt | tail -n 1`
+bwa mem -t 8 -M $ref $prefix_1.fq.gz $prefix_2.fq.gz | samtools view -bS - > folder/$SGE_TASK_ID.bam
+samtools sort folder/$SGE_TASK_ID.bam -o folder/$SGE_TASK_ID.sort.bam
+java -Xmx20g -jar /data/apps/picard-tools/1.87/AddOrReplaceReadGroups.jar I=folder/$SGE_TASK_ID.sort.bam O=folder/$SGE_TASK_ID.RG.bam SORT_ORDER=coordinate RGPL=illumina RGPU=D109LACXX RGLB=Lib1 RGID={your sample name} RGSM={your sample name} VALIDATION_STRINGENCY=LENIENT
+samtools index folder/$prefix.RG.bam
+
+# bowtie2
+# what should be a shell variable
+multimapping=4    # number of reads reported for multimapping
+bowtie2 -k $multimapping -X2000 --mm --threads 8 -x [bowtie index] -1 READ1.fq.gz -2 READ2.fq.gz 2>$log | samtools view -bS - > folder/$SGE_TASK_ID.bowtie.bam
+samtools sort folder/$SGE_TASK_ID.bowtie.bam -o folder/$SGE_TASK_ID.bowtie.sort.bam
+samtools index
+# no readgroups, I don't need them if I won't merge them and run GATK
+# I will just use bowtie for RNAseq
+
+# tophat (calls bowtie2 ... module load tophat/2.1.0 , bowtie2/2.2.7)
+# tophat is for RNAseq, here you can't align to the genome ... but have to consider transcripts
+tophat -p 8 -G giff_file -o output_folder [bowtie index] READ1.fq.gz READ2.fq.gz
+samtools sort output_folder/accepted_hits.bam -o output_folder/accepted_hits.sort.bam
+samtools index
+
+#######
+One final hint...
+debug using just one sample
+#$ -t 1
+########
+
+###############################
+##  Week 3
+###############################
+
+Lab -> lets continue grinding through the results of your above pipeline, to call SNPs, call peaks, analyze RNAseq
+
+Here are two DNAseq "pipelines, you will have to change to shell scripts.  
+You likely don't want to hard-encode file names
+$ref is the ref genome
+You likely don't want to just dump all your crap in the directory you run the script from
+So this exercise here is more difficult than it looks
+
+##################
+# DNAseq
+##################
+
+# just load all the stuff I might need, I will try to quit having you find modules...
+module load bwa/0.7.8
+module load samtools/1.3
+module load bcftools/1.3
+module load enthought_python/7.3.2
+module load java/1.7
+module load gatk/2.4-7
+module load picard-tools/1.87
+module load bowtie2/2.2.7
+module load tophat/2.1.0
+module load bamtools/2.3.0        # bamtools merge is useful
+module load freebayes/0.9.21      # fasta_generate_regions.py is useful
+module load vcftools/0.1.15
+
+# Option #1 -- traditional GATK pipeline (slow)
+java -d64 -jar /data/apps/picard-tools/1.87/MergeSamFiles.jar I=sample1.RG.bam I=sample2.RG.bam etc SO=coordinate AS=true VALIDATION_STRINGENCY=SILENT O=merged.bam
+samtools index merged.bam
+# a little trick if you have lots of I='s you want to compare to one another in the same dir
+# just replace the manual list of I= I= ... with $(printf 'I=%s ' $dir/*.RG.bam)
+java -d64 -Xmx128g -jar /data/apps/gatk/2.4-7/GenomeAnalysisTK.jar -T RealignerTargetCreator -nt 8 -R $ref -I merged.bam --minReadsAtLocus 4 -o merged.intervals
+java -d64 -Xmx20g -jar /data/apps/gatk/2.4-7/GenomeAnalysisTK.jar -T IndelRealigner -R $ref -I merged.bam -targetIntervals merged.intervals -LOD 3.0 -o merged-realigned.bam
+java -d64 -Xmx128g -jar /data/apps/gatk/2.4-7/GenomeAnalysisTK.jar -T UnifiedGenotyper -nt 8 -R $ref -I merged-realigned.bam -gt_mode DISCOVERY -stand_call_conf 30 -stand_emit_conf 10 -o rawSNPS-Q30.vcf
+java -d64 -Xmx128g -jar  /data/apps/gatk/2.4-7/GenomeAnalysisTK.jar -T UnifiedGenotyper -nt 8 -R $ref -I merged-realigned.bam -gt_mode DISCOVERY -glm INDEL -stand_call_conf 30 -stand_emit_conf 10 -o inDels-Q30.vcf
+java -d64 -Xmx20g -jar /data/apps/gatk/2.4-7/GenomeAnalysisTK.jar -T VariantFiltration -R $ref -V rawSNPS-Q30.vcf --mask inDels-Q30.vcf --maskExtension 5 --maskName InDel --clusterWindowSize 10 --filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "BadValidation" --filterExpression "QUAL < 30.0" --filterName "LowQual" --filterExpression "QD < 5.0" --filterName "LowVQCBD" --filterExpression "FS > 60" --filterName "FisherStrand" -o Q30-SNPs.vcf
+cat Q30-SNPs.vcf | grep 'PASS\|^#' > pass.SNPs.vcf
+cat inDels-Q30.vcf | grep 'PASS\|^#' > pass.inDels.vcf
+# it I want to display in SCGB I have to bgzip and tabix (part of samtools), see lecture 4
+# oddly bgzip is not the same as gzip and tabix is only for indexing bgzip, and SCGB can only deal with bgzip
+# the reasons behind this are discussed in the Buffalo book (but basically bgzip indexes on several defined columns)
+# may as well run this now
+bgzip -c pass.SNPs.vcf >pass.SNPs.vcf.gz
+tabix -p vcf pass.SNPs.vcf.gz
+bgzip -c pass.inDels.vcf >pass.inDels.vcf.gz
+tabix -p pass.inDels.vcf.gz
+
+
+# Option #2 break the genome into pieces ... much faster, less accurate
+# python script is part of freebayes/0.9.21
+python fasta_generate_regions.py ref/ref.fasta.fai 1000000 >regions.txt
+wc -l regions.txt
+#4381
+# iterate over regions
+#$ -t 1-4381
+
+leadzero=$(printf "V%04d" $SGE_TASK_ID)
+region=`head -n $SGE_TASK_ID regions.txt | tail -n 1` 
+bamtools merge -list "list of bam files" -region $region > $SGE_TASK_ID.bam
+samtools index $SGE_TASK_ID.bam
+samtools mpileup -u -t DP,AD -f $ref $SGE_TASK_ID.bam -r $region | bcftools call -c -v --output-type v - > $leadzero.vcf
+
+#clean-up outside the parallel loop
+bcftools concat --output-type v $(ls -1 *.vcf | perl -pe 's/\n/ /g') > merged.vcf  
+# this vcf isn't nearly as good as the one above, (but you can bgzip and tabix it)
+
+#Option #3 might be to take the best of both worlds and run GATK on $SGE_TASK_ID.bam
+(see final project)
+
+###############################
+# RNAseq
+###############################
+
+# I have to use the bowtie2 files for this analysis, as those reads are aligned with gaps
+
+# Rstudio on hpc -- all libraries available!
+http://hpc-login-2-1.oit.uci.edu:8787
+
+# here are some tutorials...
+https://www.bioconductor.org/packages/release/bioc/html/DESeq2.html
+https://www.bioconductor.org/packages/release/bioc/manuals/DESeq2/man/DESeq2.pdf
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4302049/
+https://bioc.ism.ac.jp/packages/2.14/bioc/vignettes/DESeq2/inst/doc/beginner.pdf
+
+###  installation instruction notes ... if you want your own Rstudio/DEseq2 server
+###  BioinformaticsADL.txt
+
+###  seeing files on hpc via a remote mount ... 
+###  BioinformaticsADL.txt
+
+install macports...
+sudo port -v install xorg-server
+sudo port -v install xorg
+
+ssh -Y tdlong@hpc.oit.uci.edu
+module load R
+module load rstudio
+rstudio
+
+##############################
+
+new way
+https://biojhub-1.oit.uci.edu
+
+
+
+# we should work through the "beginner" tutorial ... it is good enough for a publication
+
+library( "GenomicFeatures" )
+hse <- makeTranscriptDbFromGFF( "/path/to/your/genemodel.GTF", format="gtf" )
+exonsByGene <- exonsBy( hse, by="gene" )
+fls <- list.files( "/path/to/bam/files", pattern="bam$", full=TRUE )
+library( "Rsamtools" )
+bamLst <- BamFileList( fls, yieldSize=100000 )
+library( "GenomicAlignments" )
+se <- summarizeOverlaps( exonsByGene, bamLst, mode="Union", singleEnd=FALSE,ignore.strand=TRUE,fragments=TRUE )
+
+### this is a big "counts table" of raw reads counts, once you have it you don't need the bam files again
+### save se so you don't have to run the above again
+save(se,file="se.R")
+load("se.R")
+
+######  look at se
+
+library( "DESeq2" )
+sampleInfo <- read.csv( "/path/to/file.CSV" )
+#  run	factor1	factor2 ...
+sampleInfo <- DataFrame( sampleInfo )
+seIdx <- match(colnames(se), sampleInfo$run)
+colData(se) <- cbind( colData(se), sampleInfo[ seIdx, ] )
+ddsFull <- DESeqDataSet( se, design = ~ factor1 + factor2 )    # names must match sampleInfo colnames
+
+dds <- DESeq(dds)
+
+
+#####################################
+# ATACseq
+#####################################
+
+# Option #1 -- quick and dirty look at the data by just looking at coverage|position for each sample
+a=sample_1_R1_001.fastq.gz
+b=sample_1_R2_001.fastq.gz
+bwa mem -t 4 -M $ref $a $b | samtools view -bS - > sample_1.bam
+samtools sort sample_1.bam -o sample_1.sort.bam
+samtools index sample_1.sort.bam
+# normalize across samples
+Nreads=`samtools view -c -F 4 sample_1.sort.bam`
+Scale=`echo "1.0/($Nreads/1000000)" | bc -l`
+samtools view -b sample_1.sort.bam | genomeCoverageBed -ibam - -g $ref -bg -scale $Scale > sample_1.coverage
+#  module avail -l 2>&1 | grep kent
+#  JJ may have installed kentUtils so I could load he module and look or install myself
+kentUtils/bin/linux.x86_64/bedGraphToBigWig sample_1.coverage $ref.fai sample_1.bw
+# we want the link to be somewhere the public can see on the web
+# watch out for the ">>" if you rerun this script...
+echo "http://wfitch.bio.uci.edu/~tdlong/SantaCruzTracks/ATACseq/sample_1.bw" >>links.txt
+# this is a place where I can host files
+scp *.bw tdlong@wfitch.bio.uci.edu:/home/tdlong/public_html/SantaCruzTracks/ATACseq/.
+
+
+###############################################
+###  look at some data using IGV on your computer
+##############################################
+
+you can install IGV and look at bam files
+I prefer to just put them in SantaCruz (week 4)
+IGV can be good if you don't have a hosted genome
+
+##########################################
+##  Week 4
+##########################################
+
+SCGB
+
+i) blat some stuff
+
+ii) upload files
+
+Bed files  (in otherfiles)
+.... This file is release 5 coordinates, current genome is release 6, your are aligning to release 6
+.... so view in release 5  or try liftover   https://genome.ucsc.edu/util.html
+
+liftover is a real thing in informatics!!  Genome assemblies change over time.
+
+Bedgraph   (try to make one)
+
+ii) host bigger files
+
+# raw bam files
+bam & bam.bai
+# vcf files
+vcf.gz (from bgzip only!) & tabix index
+# bigwig
+# we need to install kentUtils...
+kentUtils/bin/linux.x86_64/bedGraphToBigWig sample_1.coverage $ref.fai sample_1.bw
+# we want the link to be somewhere the public can see on the web
+# watch out for the ">>" if you rerun this script...
+echo "http://wfitch.bio.uci.edu/~tdlong/SantaCruzTracks/ATACseq/sample_1.bw" >>links.txt
+scp *.bw tdlong@wfitch.bio.uci.edu:/home/tdlong/public_html/SantaCruzTracks/ATACseq/.
+
+do the students have hosting space??
+https://hpc.oit.uci.edu/sharing-data
+
+
+
+# here are some files and idexes I want to share
+/share/adl/tdlong/DSPR/ATACseq/Sample_A4_BR_1.bw
+/share/adl/tdlong/DSPR/DNAseq/Oct10/A4.RG.bam
+/share/adl/tdlong/DSPR/DNAseq/Oct10/A4.RG.bam.bai
+/share/adl/tdlong/DSPR/DNAseq/work/SNPs.vcf.gz
+/share/adl/tdlong/DSPR/DNAseq/work/SNPs.vcf.gz.tbi
+
+#  the path to your file has to have "execute" privileges
+chmod a+x  /share/adl/tdlong
+chmod a+x  /share/adl/tdlong/DSPR
+chmod a+x  /share/adl/tdlong/DSPR/ATACseq
+chmod a+x  /share/adl/tdlong/DSPR/ATACseq/bigwigs
+chmod a+x  /share/adl/tdlong/DSPR/DNAseq
+chmod a+x  /share/adl/tdlong/DSPR/DNAseq/Oct10
+chmod a+x  /share/adl/tdlong/DSPR/DNAseq/work
+
+#  the actual file (and index) has to be readable
+chmod a+r  /share/adl/tdlong/DSPR/ATACseq/bigwigs/Sample_A4_BR_1.bw
+chmod a+r  /share/adl/tdlong/DSPR/DNAseq/Oct10/A4.RG.bam
+chmod a+r  /share/adl/tdlong/DSPR/DNAseq/Oct10/A4.RG.bam.bai
+chmod a+r  /share/adl/tdlong/DSPR/DNAseq/work/SNPs.vcf.gz
+chmod a+r  /share/adl/tdlong/DSPR/DNAseq/work/SNPs.vcf.gz.tbi
+
+# in your public space make some symlinks to the files and indexes
+cd  /pub/public-www/tdlong
+mkdir BioinformaticsClass
+cd BioinformaticsClass
+ln -s  /share/adl/tdlong/DSPR/ATACseq/bigwigs/Sample_A4_BR_1.bw   Sample_A4_BR_1.bw
+ln -s  /share/adl/tdlong/DSPR/DNAseq/Oct10/A4.RG.bam   A4.RG.bam
+ln -s  /share/adl/tdlong/DSPR/DNAseq/Oct10/A4.RG.bam.bai   A4.RG.bam.bai
+ln -s  /share/adl/tdlong/DSPR/DNAseq/work/SNPs.vcf.gz   SNPs.vcf.gz
+ln -s  /share/adl/tdlong/DSPR/DNAseq/work/SNPs.vcf.gz.tbi   SNPs.vcf.gz.tbi
+
+#  load these in SCGB ... note that the indexes are "automatic"
+http://hpc.oit.uci.edu/~tdlong/BioinformaticsClass/Sample_A4_BR_1.bw
+http://hpc.oit.uci.edu/~tdlong/BioinformaticsClass/A4.RG.bam
+http://hpc.oit.uci.edu/~tdlong/BioinformaticsClass/SNPs.vcf.gz
+
+###########################################
+## Week 5
+###########################################
+
+Lab (this may take closer to a month than 3 hours). 
+The idea is to pick a final project you are comfortable from the list below or surprise me.
+Challenge yourself 
+... a little rough, not too much, just enough https://getyarn.io/yarn-clip/e0a603e9-602e-49cb-8930-5d0cf5b24950 ...
+a clear cultural reference to choosing a final informatics project!!
+
+DNAseq ->
+a) remove duplicates...
+	my pipeline is for high coverage poolseq datasets, for lower coverage gDNA data (especially pairends)
+	people tend to "remove duplicates" using PicardTools.  So modify your GATK pipeline to include remove duplicates
+
+b) design a pipeline that is fast ... but uses GATK instead of mpileup
+
+Really big summary files ->
+c)  Do some analysis of each line of "union.txt" using numpy
+		or deal with union.txt using some of the other methods for large files discuss by Dr. Thornton
+		for Dr. Mueller, how might you do a t-test or anova on each row (and output interesting lines)
+
+More fun with python ->
+d)  write a python program (this program is pretty useful if you decide to do some "poolseq") to go through a VCF file and
+	i.  calculate the frequency of the "ALT" allele for each position & sample
+	ii. output freq and coverage for each sample
+	
+ATACseq ->
+e)  ATACseq -> 
+# Option #2 -- the correct analysis is more difficult
+	i) adaptor trim the reads (since ATACseq data can have small fragments)
+	ii) bowtie2
+	iii) post-alignment filtering (get rid of PCR-duplicates, multimapping reads, etc. -- Picard remove duplicates)
+	iv) covert bam to tag align (i.e., a BED like thing), quality scores, pseudo-replicates, gather samples
+	v) TN5 shifting of tag-aligns (TN5 didn't cut at the start of the read).
+	vi) peak calling (mac2) {blacklisting}
+	vii) naive overlap, IDR overlap
+# Yikes
+# maybe better to understand and install kundajelab pipeline ...
+# it seems to be capable of taking the bowtie2 bam files above
+https://github.com/kundajelab/atac_dnase_pipelines	
+https://docs.google.com/document/d/1f0Cm4vRyDQDu0bMehHD7P7KOMxTOP-HiNoIvL1VcBt8/edit#
+
+f)  I love the Santa Cruz Browser but I don't work on a model
+Progessive Cactus is on the cluster, build your own species
+It is hard ... I have notes if you are interested
+https://github.com/glennhickey/progressiveCactus
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3166836/
+
+g) No, I really love SCGB
+- check out genome in a box, track hubs, ....
+
+h) I want to run RNAseq, but don't have a genome...
+- you can build a transcriptome using "trinity" (on the cluster)
+- then you can use tophat to align to the transcriptome (instead of a genome + GFF file)
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
