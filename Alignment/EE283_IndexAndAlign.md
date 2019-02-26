@@ -1,5 +1,5 @@
 
-#Indexing and aligning ATACseq, DNAseq, and RNAseq
+# Indexing and aligning ATACseq, DNAseq, and RNAseq
 
 First download the D.mel reference genome:
 
