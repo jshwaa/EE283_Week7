@@ -10,7 +10,7 @@ module load samtools/1.3
 module load picard-tools/1.87
 module load java/1.7
 
-cd DNAseq/labeled_sanger
+cd DNAseq/labeled_DNAseq
 
 prefix=`head -n $SGE_TASK_ID convertfiles.txt | tail -n 1`
 
