@@ -76,5 +76,5 @@ prefixlist="../DNAseq.prefixes.txt"
 
 prefix=`head -n $SGE_TASK_ID $prefixlist | tail -n 1`
 
-qsub java -Xmx20g -jar /data/apps/picard-tools/1.87/picard.jar MarkDuplicates I=prefixsort.sanger.bam O=prefix.marked_duplicates.bam M=marked_duplicates.txt VALIDATION_STRINGENCY=LENIENT
+java -Xmx20g -jar /data/apps/picard-tools/1.87/picard.jar MarkDuplicates I=prefixsort.sanger.bam O=prefix.marked_duplicates.bam M=marked_duplicates.txt VALIDATION_STRINGENCY=LENIENT
 ```
