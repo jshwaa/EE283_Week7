@@ -109,7 +109,7 @@ prefixlist="../DNAseq.prefixes.txt"
 
 prefix=`head -n $SGE_TASK_ID $prefixlist | tail -n 1`
 
-java -Xmx20g -jar /data/apps/picard-tools/1.87/MarkDuplicates.jar I=$prefix.sort.sanger.bam O=$prefix.marked_duplicates.bam M=$prefix.marked_duplicates.txt VALIDATION_STRINGENCY=LENIENT
+java -Xmx20g -jar /data/apps/picard-tools/1.87/MarkDuplicates.jar I=$prefix.sort.bam O=$prefix.marked_duplicates.bam M=$prefix.marked_duplicates.txt VALIDATION_STRINGENCY=LENIENT
 ```
 
 Add read groups and index the resulting bam file:
