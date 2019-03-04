@@ -71,7 +71,7 @@ adding readgroups (note: make sure you ```mkdir``` an "aligned" subdirectory wit
 module load bwa/0.7.8
 module load samtools/1.3
 module load picard-tools/1.87
-module load java/1.7
+module load java/1.8
 
 cd DNAseq/labeled_DNAseq
 
