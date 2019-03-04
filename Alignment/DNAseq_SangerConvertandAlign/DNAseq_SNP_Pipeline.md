@@ -1,7 +1,43 @@
+First, make sure you have a reference genome...
+```
+$ cd Bioinformatics_Course/refs
+$ wget ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-chromosome-r6.26.fasta.gz
+$ gunzip *fasta.gz
+```
+
+..and you index it:
+```
+#!/bin/bash
+#$ -N index
+#$ -q bio,pub64
+#$ -pe openmp 8
+#$ -R y
+
+module load bowtie2/2.2.7
+module load bwa/0.7.8
+module load samtools/1.3
+module load bcftools/1.3
+module load enthought_python/7.3.2
+module load gatk/2.4-7
+module load picard-tools/1.87
+module load java/1.7
+
+ref="ref/dmel-all-chromosome-r6.26.fasta"
+bwa index $ref 
+samtools faidx $ref  
+java -d64 -Xmx128g -jar /data/apps/picard-tools/1.87/CreateSequenceDictionary.jar R=$ref O=ref/dmel-all-chromosome-r6.26.fasta.dict
+bowtie2-build $ref $ref
+```
+
+Also, in Bioinformatics_Course/DNAseq:
+```
+$ ls *1.fq.gz | sed 's/_1.fq.gz//' > DNAseq.prefixes.txt
+$ ls *fq.gz > convertfiles.txt
+```
+
 According to the read me in the Bioinformatics_Course/DNAseq/ folder, we should convert the fastq files to sanger format first before aligning this time..
 
 So, from the Bioinformatics_Course directory, ```qsub sangerconvert.sh```:
-
 ```
 #!/bin/bash
 #$ -N DNA_sanger_convert
