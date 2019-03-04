@@ -53,7 +53,7 @@ samtools sort aligned/$prefix.bam -o aligned/$prefix.sort.bam
 # samtools index aligned/$prefix.RG.bam
 ```
 
-Next, mark duplicates with picard-tools MarkDuplicates tool with ```qsub markdups.sh```:
+Next, mark duplicates on sorted bam files with picard-tools' MarkDuplicates ```qsub markdups.sh```:
 ```
 #!/bin/bash
 #$ -N DNAseq_MarkDuplicates
@@ -77,5 +77,5 @@ prefixlist="../DNAseq.prefixes.txt"
 
 prefix=`head -n $SGE_TASK_ID $prefixlist | tail -n 1`
 
-java -Xmx20g -jar /data/apps/picard-tools/1.87/MarkDuplicates.jar I=$prefix.sanger.bam O=$prefix.marked_duplicates.bam M=$prefix.marked_duplicates.txt VALIDATION_STRINGENCY=LENIENT
+java -Xmx20g -jar /data/apps/picard-tools/1.87/MarkDuplicates.jar I=$prefix.sort.sanger.bam O=$prefix.marked_duplicates.bam M=$prefix.marked_duplicates.txt VALIDATION_STRINGENCY=LENIENT
 ```
