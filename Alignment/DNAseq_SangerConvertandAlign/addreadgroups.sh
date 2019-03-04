@@ -11,7 +11,9 @@ module load java/1.7
 
 cd DNAseq/labeled_DNAseq/aligned
 
-prefix=`head -n $SGE_TASK_ID DNAseq.prefixes.txt | tail -n 1`
+prefixlist="../DNAseq.prefixes.txt"
+
+prefix=`head -n $SGE_TASK_ID $prefixlist | tail -n 1`
 
 java -Xmx20g -jar /data/apps/picard-tools/1.87/AddOrReplaceReadGroups.jar I=aligned/$prefix.marked_duplicates.bam O=aligned/$prefix.marked_duplicates.RG.bam SORT_ORDER=coordinate RGPL=sanger RGPU=D109LACXX RGLB=Lib1 RGID=$prefix RGSM=$prefix VALIDATION_STRINGENCY=LENIENT
 samtools index aligned/$prefix.marked_duplicates.RG.bam
