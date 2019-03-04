@@ -138,6 +138,7 @@ Then ```qrsh -q``` into a node and merge bam files within the folder containing 
 ```
 $ module load samtools
 $ samtools merge merged.marked_duplicates.RG.bam *duplicates.RG.bam
+$ samtools index merged.marked_duplicates.RG.bam
 ```
 
 Run indel realignment:
