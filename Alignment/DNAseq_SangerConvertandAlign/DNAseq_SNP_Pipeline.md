@@ -23,7 +23,7 @@ prefix=`head -n $SGE_TASK_ID convertfiles.txt | tail -n 1`
 ```
 
 Then align the converted fastq files to the reference D. melanogaster genome with ```qsub DNAseq_sanger_align.sh```, without yet 
-adding readgroups:
+adding readgroups (note: make sure you ```mkdir``` an "aligned" subdirectory within the labeled_DNAseq folder first to output to):
 ```
 #!/bin/bash
 #$ -N DNAseq_align
