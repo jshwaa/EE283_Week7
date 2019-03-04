@@ -39,9 +39,9 @@ module load java/1.7
 
 cd DNAseq/labeled_DNAseq
 
-ref="../../ref/dmel-all-chromosome-r6.13.fasta"
+ref="../../ref/dmel-all-chromosome-r6.26.fasta"
 
-dict="../../ref/dmel-all-chromosome-r6.13.fasta.dict"
+dict="../../ref/dmel-all-chromosome-r6.26.fasta.dict"
 
 
 prefix=`head -n $SGE_TASK_ID DNAseq.prefixes.txt | tail -n 1`
@@ -69,9 +69,9 @@ module load java/1.7
 
 cd DNAseq/labeled_DNAseq/aligned
 
-ref="../../../ref/dmel-all-chromosome-r6.13.fasta"
+ref="../../../ref/dmel-all-chromosome-r6.26.fasta"
 
-dict="../../../ref/dmel-all-chromosome-r6.13.fasta.dict"
+dict="../../../ref/dmel-all-chromosome-r6.26.fasta.dict"
 
 prefixlist="../DNAseq.prefixes.txt"
 
