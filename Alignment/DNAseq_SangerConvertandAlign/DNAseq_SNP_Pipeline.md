@@ -134,3 +134,8 @@ prefix=`head -n $SGE_TASK_ID $prefixlist | tail -n 1`
 java -Xmx20g -jar /data/apps/picard-tools/1.87/AddOrReplaceReadGroups.jar I=$prefix.marked_duplicates.bam O=$prefix.marked_duplicates.RG.bam SORT_ORDER=coordinate RGPL=sanger RGPU=D109LACXX RGLB=Lib1 RGID=$prefix RGSM=$prefix VALIDATION_STRINGENCY=LENIENT
 samtools index $prefix.marked_duplicates.RG.bam
 ```
+Then merge bam files within the folder containing them:
+```
+$ module load samtools
+$ samtools merge merged.marked_duplicates.RG.bam *duplicates.RG.bam
+```
