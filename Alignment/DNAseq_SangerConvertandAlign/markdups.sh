@@ -12,9 +12,6 @@ module load java/1.7
 
 cd DNAseq/labeled_DNAseq/aligned
 
-ref="../../../ref/dmel-all-chromosome-r6.26.fasta"
-
-dict="../../../ref/dmel-all-chromosome-r6.26.fasta.dict"
 
 prefixlist="../DNAseq.prefixes.txt"
 
