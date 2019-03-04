@@ -134,8 +134,19 @@ prefix=`head -n $SGE_TASK_ID $prefixlist | tail -n 1`
 java -Xmx20g -jar /data/apps/picard-tools/1.87/AddOrReplaceReadGroups.jar I=$prefix.marked_duplicates.bam O=$prefix.marked_duplicates.RG.bam SORT_ORDER=coordinate RGPL=sanger RGPU=D109LACXX RGLB=Lib1 RGID=$prefix RGSM=$prefix VALIDATION_STRINGENCY=LENIENT
 samtools index $prefix.marked_duplicates.RG.bam
 ```
-Then merge bam files within the folder containing them:
+Then ```qrsh -q``` into a node and merge bam files within the folder containing them:
 ```
 $ module load samtools
 $ samtools merge merged.marked_duplicates.RG.bam *duplicates.RG.bam
 ```
+
+Run indel realignment:
+```
+$ module load java/1.8
+$ module load gatk/3.7
+$ java -jar /data/apps/gatk/3.7/GenomeAnalysisTK.jar -T RealignerTargetCreator -R ../../../ref/dmel-all-chromosome-r6.26.fasta.dict -I merged.marked_duplicates.RG.bam -o merged.realigner.intervals --fix_misencoded_quality_scores
+$ java -jar /data/apps/gatk/3.7/GenomeAnalysisTK.jar -T IndelRealigner -R ../../../ref/dmel-all-chromosome-r6.26.fasta.dict -I merged.marked_duplicates.RG.bam -targetIntervals merged.realigner.intervals -o merged.realigned.bam --fix_misencoded_quality_scores
+```
+
+java -jar /data/apps/gatk/3.7/GenomeAnalysisTK.jar -T RealignerTargetCreator -R ../../../ref/dmel-all-chromosome-r6.13.fasta.dict -I merged.marked_duplicates.RG.bam -o merged.realigner.intervals --fix_misencoded_quality_scores
+java -jar /data/apps/gatk/3.7/GenomeAnalysisTK.jar -T IndelRealigner -R ../../../ref/dmel-all-chromosome-r6.13.fasta.dict -I merged.marked_duplicates.RG.bam -targetIntervals merged.realigner.intervals -o merged.realigned.bam --fix_misencoded_quality_scores
