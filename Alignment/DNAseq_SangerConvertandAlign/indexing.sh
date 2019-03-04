@@ -11,7 +11,7 @@ module load bcftools/1.3
 module load enthought_python/7.3.2
 module load gatk/2.4-7
 module load picard-tools/1.87
-module load java/1.7
+module load java/1.8
 
 ref="ref/dmel-all-chromosome-r6.26.fasta"
 bwa index $ref 
