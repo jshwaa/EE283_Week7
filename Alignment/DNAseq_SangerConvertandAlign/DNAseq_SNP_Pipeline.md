@@ -58,8 +58,7 @@ prefix=`head -n $SGE_TASK_ID convertfiles.txt | tail -n 1`
 /pub/jcrapser/seqtk/seqtk seq -Q64 -V $prefix | gzip -c > $prefix.sanger.fq.gz
 ```
 
-Then align the converted fastq files to the reference D. melanogaster genome with ```qsub DNAseq_sanger_align.sh```, without yet 
-adding readgroups (note: make sure you ```mkdir``` an "aligned" subdirectory within the labeled_DNAseq folder first to output to):
+Then align the converted fastq files to the reference D. melanogaster genome with ```qsub DNAseq_sanger_align.sh```, add readgroups and index (note: make sure you ```mkdir``` an "aligned" subdirectory within the labeled_DNAseq folder first to output to):
 ```
 #!/bin/bash
 #$ -N DNAseq_align
@@ -85,9 +84,24 @@ prefix=`head -n $SGE_TASK_ID DNAseq.prefixes.txt | tail -n 1`
 
 bwa mem -t 8 -M ${ref} ${prefix}_1.fq.gz.sanger.fq.gz ${prefix}_2.fq.gz.sanger.fq.gz | samtools view -bS - > ./aligned/${prefix}.bam
 samtools sort aligned/$prefix.bam -o aligned/$prefix.sort.bam
-# java -Xmx20g -jar /data/apps/picard-tools/1.87/AddOrReplaceReadGroups.jar I=aligned/$prefix.sort.bam O=aligned/$prefix.RG.bam SORT_ORDER=coordinate RGPL=sanger RGPU=D109LACXX RGLB=Lib1 RGID=$prefix RGSM=$prefix VALIDATION_STRINGENCY=LENIENT
-# samtools index aligned/$prefix.RG.bam
+java -Xmx20g -jar /data/apps/picard-tools/1.87/AddOrReplaceReadGroups.jar I=aligned/$prefix.sort.bam O=aligned/$prefix.RG.bam SORT_ORDER=coordinate RGPL=sanger RGPU=D109LACXX RGLB=Lib1 RGID=$prefix RGSM=$prefix VALIDATION_STRINGENCY=LENIENT
+samtools index aligned/$prefix.RG.bam
 ```
+
+Then ```qrsh -q``` into a node and merge bam files within the folder containing them:
+```
+$ module load samtools
+$ samtools merge merged.RG.bam *RG.bam
+```
+
+
+
+
+
+
+
+
+
 
 Next, mark duplicates on sorted bam files with picard-tools' MarkDuplicates ```qsub markdups.sh```:
 ```
@@ -133,12 +147,6 @@ prefix=`head -n $SGE_TASK_ID $prefixlist | tail -n 1`
 
 java -Xmx20g -jar /data/apps/picard-tools/1.87/AddOrReplaceReadGroups.jar I=$prefix.marked_duplicates.bam O=$prefix.marked_duplicates.RG.bam SORT_ORDER=coordinate RGPL=sanger RGPU=D109LACXX RGLB=Lib1 RGID=$prefix RGSM=$prefix VALIDATION_STRINGENCY=LENIENT
 samtools index $prefix.marked_duplicates.RG.bam
-```
-Then ```qrsh -q``` into a node and merge bam files within the folder containing them:
-```
-$ module load samtools
-$ samtools merge merged.marked_duplicates.RG.bam *duplicates.RG.bam
-$ samtools index merged.marked_duplicates.RG.bam
 ```
 
 Run indel realignment:
