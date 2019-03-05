@@ -62,7 +62,7 @@ Then align the converted fastq files to the reference D. melanogaster genome wit
 ```
 #!/bin/bash
 #$ -N DNAseq_align
-#$ -q epyc,pub64
+#$ -q epyc,pub64,bio,class
 #$ -pe openmp 8
 #$ -R y
 #$ -t 1-12
@@ -82,19 +82,40 @@ dict="../../ref/dmel-all-chromosome-r6.26.fasta.dict"
 prefix=`head -n $SGE_TASK_ID DNAseq.prefixes.txt | tail -n 1`
 
 
-bwa mem -t 8 -M ${ref} ${prefix}_1.fq.gz.sanger.fq.gz ${prefix}_2.fq.gz.sanger.fq.gz | samtools view -bS - > ./aligned/${prefix}.bam
+bwa mem -t 8 -M ${ref} ${prefix}_1.fq.gz ${prefix}_2.fq.gz | samtools view -bS - > ./aligned/${prefix}.bam
 samtools sort aligned/$prefix.bam -o aligned/$prefix.sort.bam
 java -Xmx20g -jar /data/apps/picard-tools/1.87/AddOrReplaceReadGroups.jar I=aligned/$prefix.sort.bam O=aligned/$prefix.RG.bam SORT_ORDER=coordinate RGPL=sanger RGPU=D109LACXX RGLB=Lib1 RGID=$prefix RGSM=$prefix VALIDATION_STRINGENCY=LENIENT
 samtools index aligned/$prefix.RG.bam
 ```
 
-Then ```qrsh -q``` into a node and merge bam files within the folder containing them:
+Then ```qrsh -q``` into a node, merge bam files within the folder containing them and index the merged file:
 ```
 $ module load samtools
 $ samtools merge merged.RG.bam *RG.bam
+$ samtools index merged.RG.bam
 ```
 
+Then run indel realignment:
+```
+#!/bin/bash
+#$ -N DNAseq_indelRealign
+#$ -q epyc,pub64,class
+#$ -pe openmp 8
+#$ -R y
 
+module load bwa/0.7.8
+module load samtools/1.3
+module load gatk/3.7
+module load picard-tools/1.87
+module load java/1.8
+
+cd DNAseq/labeled_DNAseq/aligned
+
+ref="../../../ref/dmel-all-chromosome-r6.26.fasta"
+
+java -jar /data/apps/gatk/3.7/GenomeAnalysisTK.jar -T RealignerTargetCreator -R $ref -I merged.RG.bam -o merged.realigner.intervals 
+java -jar /data/apps/gatk/3.7/GenomeAnalysisTK.jar -T IndelRealigner -R $ref -I merged.RG.bam -targetIntervals merged.realigner.intervals -o merged.realigned.bam
+```
 
 
 
