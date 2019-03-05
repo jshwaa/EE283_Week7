@@ -1,6 +1,6 @@
 First, make sure you have a reference genome...
 ```
-$ cd Bioinformatics_Course/refs
+$ cd Bioinformatics_Course/ref
 $ wget ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/current/fasta/dmel-all-chromosome-r6.26.fasta.gz
 $ gunzip *fasta.gz
 ```
