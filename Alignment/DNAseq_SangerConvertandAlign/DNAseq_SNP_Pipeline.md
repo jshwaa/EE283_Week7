@@ -37,7 +37,7 @@ $ ls *fq.gz > convertfiles.txt
 
 According to the read me in the Bioinformatics_Course/DNAseq/ folder, we should convert the fastq files to sanger format first before aligning this time..
 
-So, from the Bioinformatics_Course directory, ```qsub sangerconvert.sh```:
+So, from the Bioinformatics_Course directory, ```qsub sanger_convert.sh```:
 ```
 #!/bin/bash
 #$ -N DNA_sanger_convert
@@ -95,7 +95,7 @@ $ samtools merge merged.RG.bam *RG.bam
 $ samtools index merged.RG.bam
 ```
 
-Then run indel realignment:
+Then run indel realignment with ```qsub indel_realign.sh```:
 ```
 #!/bin/bash
 #$ -N DNAseq_indelRealign
@@ -119,64 +119,3 @@ java -jar /data/apps/gatk/3.7/GenomeAnalysisTK.jar -T IndelRealigner -R $ref -I 
 
 
 
-
-
-
-
-
-Next, mark duplicates on sorted bam files with picard-tools' MarkDuplicates ```qsub markdups.sh```:
-```
-#!/bin/bash
-#$ -N DNAseq_MarkDuplicates
-#$ -q epyc,pub64
-#$ -pe openmp 8
-#$ -R y
-#$ -t 1-12
-
-module load bwa/0.7.8
-module load samtools/1.3
-module load picard-tools/1.87
-module load java/1.7
-
-cd DNAseq/labeled_DNAseq/aligned
-
-prefixlist="../DNAseq.prefixes.txt"
-
-prefix=`head -n $SGE_TASK_ID $prefixlist | tail -n 1`
-
-java -Xmx20g -jar /data/apps/picard-tools/1.87/MarkDuplicates.jar I=$prefix.sort.bam O=$prefix.marked_duplicates.bam M=$prefix.marked_duplicates.txt VALIDATION_STRINGENCY=LENIENT
-```
-
-Add read groups and index the resulting bam file:
-```
-#!/bin/bash
-#$ -N DNAseq_RG_and_index
-#$ -q epyc,pub64
-#$ -pe openmp 8
-#$ -R y
-#$ -t 1-12
-
-module load samtools/1.3
-module load picard-tools/1.87
-module load java/1.7
-
-cd DNAseq/labeled_DNAseq/aligned
-
-prefixlist="../DNAseq.prefixes.txt"
-
-prefix=`head -n $SGE_TASK_ID $prefixlist | tail -n 1`
-
-java -Xmx20g -jar /data/apps/picard-tools/1.87/AddOrReplaceReadGroups.jar I=$prefix.marked_duplicates.bam O=$prefix.marked_duplicates.RG.bam SORT_ORDER=coordinate RGPL=sanger RGPU=D109LACXX RGLB=Lib1 RGID=$prefix RGSM=$prefix VALIDATION_STRINGENCY=LENIENT
-samtools index $prefix.marked_duplicates.RG.bam
-```
-
-Run indel realignment:
-```
-$ module load java/1.8
-$ module load gatk/3.7
-$ java -jar /data/apps/gatk/3.7/GenomeAnalysisTK.jar -T RealignerTargetCreator -R ../../../ref/dmel-all-chromosome-r6.26.fasta.dict -I merged.marked_duplicates.RG.bam -o merged.realigner.intervals --fix_misencoded_quality_scores
-$ java -jar /data/apps/gatk/3.7/GenomeAnalysisTK.jar -T IndelRealigner -R ../../../ref/dmel-all-chromosome-r6.26.fasta.dict -I merged.marked_duplicates.RG.bam -targetIntervals merged.realigner.intervals -o merged.realigned.bam --fix_misencoded_quality_scores
-```
-
-java -jar /data/apps/gatk/3.7/GenomeAnalysisTK.jar -T RealignerTargetCreator -R ../../../ref/dmel-all-chromosome-r6.13.fasta.dict -I merged.marked_duplicates.RG.bam -o merged.realigner.intervals --fix_misencoded_quality_scores
-java -jar /data/apps/gatk/3.7/GenomeAnalysisTK.jar -T IndelRealigner -R ../../../ref/dmel-all-chromosome-r6.13.fasta.dict -I merged.marked_duplicates.RG.bam -targetIntervals merged.realigner.intervals -o merged.realigned.bam --fix_misencoded_quality_scores
