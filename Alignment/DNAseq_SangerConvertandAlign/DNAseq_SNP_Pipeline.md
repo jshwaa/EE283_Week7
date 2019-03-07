@@ -31,7 +31,7 @@ module load gatk/2.4-7
 module load picard-tools/1.87
 module load java/1.8
 
-ref="ref/dmel-all-chromosome-r6.26.fasta"
+ref="dmel-all-chromosome-r6.26.fasta"
 bwa index $ref 
 samtools faidx $ref  
 java -d64 -Xmx128g -jar /data/apps/picard-tools/1.87/CreateSequenceDictionary.jar R=$ref O=ref/dmel-all-chromosome-r6.26.fasta.dict
