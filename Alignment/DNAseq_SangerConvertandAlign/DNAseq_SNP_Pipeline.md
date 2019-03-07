@@ -5,7 +5,7 @@ $ cp /bio/share/Bioinformatics_Course.tar
 $ tar -xvf Bioinformatics_Course.tar
 ```
 
-Make barcode files "ATACbarcodes.txt" and "DNAbarcodes.txt" with column pairs of the sample ID's and labels found in ```DNAseq/README.DNA_samples.txt``` and run the python script EE283_Week7.py
+Make barcode files "ATACbarcodes.txt" and "DNAbarcodes.txt" with column pairs of the sample ID's and labels found in ```DNAseq/README.DNA_samples.txt``` and run the python script EE283_Week7.py to distribute and correctly label files.
 
 Then make sure you have a reference genome...
 ```
