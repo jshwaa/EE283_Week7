@@ -42,7 +42,7 @@ Also, in Bioinformatics_Course/ATACseq:
 $ ls *R1.fq.gz | sed 's/1.fq.gz//' > ATACseq.prefix.txt
 ```
 
-Then align the fastq files to the reference D. melanogaster genome with ```ATACseq_align.sh" and index (note: make sure you ```mkdir``` an "aligned" subdirectory within the labeled_ATACseq folder first to output to):
+Then align the fastq files to the reference D. melanogaster genome with ```ATACseq_align.sh``` and index (note: make sure you ```mkdir``` an "aligned" subdirectory within the labeled_ATACseq folder first to output to):
 ```
 #!/bin/bash
 #$ -N ATACseq_align
