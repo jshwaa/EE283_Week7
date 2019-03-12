@@ -43,5 +43,18 @@ $ chmod a+rx /pub/jcrapser/Bioinformatics_Course/DNAseq/labeled_DNAseq/aligned/p
 $ chmod a+rx /pub/jcrapser/Bioinformatics_Course/DNAseq/labeled_DNAseq/aligned/pass.inDels.vcf.gz.tbi
 ```
 
+Due to permissions issues with symbolic links, ```rm``` the symlinks in the public hosted repository and cp the respective files over from HPC local repositories.
+```
+$ cd /pub/public-www/jcrapser
+$ mkdir EE283_Bioinformatics_Course
+$ cd EE283*
+$ cp /pub/jcrapser/Bioinformatics_Course/DNAseq/labeled_DNAseq/aligned/merged.realigned.bam ./merged.realigned.bam
+$ cp /pub/jcrapser/Bioinformatics_Course/DNAseq/labeled_DNAseq/aligned/merged.realigned.bai ./merged.realigned.bai
+$ cp /pub/jcrapser/Bioinformatics_Course/DNAseq/labeled_DNAseq/aligned/SNPs_upload_JC.vcf.gz ./SNPs_upload_JC.vcf.gz
+$ cp /pub/jcrapser/Bioinformatics_Course/DNAseq/labeled_DNAseq/aligned/SNPs_upload_JC.vcf.gz.tbi ./SNPS_upload_JC.gz.tbi
+$ cp /pub/jcrapser/Bioinformatics_Course/DNAseq/labeled_DNAseq/aligned/pass.inDels.vcf.gz ./pass.inDels.vcf.gz
+$ cp /pub/jcrapser/Bioinformatics_Course/DNAseq/labeled_DNAseq/aligned/pass.inDels.vcf.gz.tbi ./pass.inDels.vcf.gz.tbi
+```
+
 Finally, import the symlinked files by URL into the UCSC Genome Browser, i.e.:
 https://hpc.oit.uci.edu/~jcrapser/EE283_Bioinformatics_Course/merged.realigned.bai
