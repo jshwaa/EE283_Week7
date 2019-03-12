@@ -57,4 +57,4 @@ $ cp /pub/jcrapser/Bioinformatics_Course/DNAseq/labeled_DNAseq/aligned/pass.inDe
 ```
 
 Finally, import the symlinked files by URL into the UCSC Genome Browser, i.e.:
-https://hpc.oit.uci.edu/~jcrapser/EE283_Bioinformatics_Course/merged.realigned.bai
+https://hpc.oit.uci.edu/~jcrapser/EE283_Bioinformatics_Course/merged.realigned.bam
