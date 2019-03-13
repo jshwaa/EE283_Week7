@@ -1,5 +1,7 @@
 Sequence files to be downloaded found in BioinformaticsCourse.txt
 
-FASTQC run on an ATACseq fastq file following decompression.
+Use python script EE283_Week7.py to distribute and relabel DNAseq, ATACseq, and RNAseq fastq files
 
-DNAseq pipeline contained in EE283_Week7/Alignment/DNAseq_SangerConvertandAlign
+DNAseq pipeline and scripts contained in EE283_Week7/Alignment/DNAseq_SangerConvertandAlign
+
+ATACseq pipeline and scripts contained in EE283_Week7/Alignment/ATACseq_align
