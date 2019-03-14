@@ -15,13 +15,21 @@ The key-value pair legend in red indicates the relevant "genotype field" informa
 	-GT: Genotype; 0=REF allele, 1=first ALT allele, 2=2nd ALT allele, etc (i.e. 0/0 homozygous REF, 1/1 homozygous ALT)
 	-AD: Allele depth (unfiltered # of reads supporoting each allele except uninformative reads)
 	-DP: Depth of coverage/filtered depth (#filtered reads supporting each allele including uninformative reads)
-	-GQ:
-	-PL:
+	-GQ: Phred-scaled confidence of genotype assignment, normalized to the most likely genotype
+	-PL: Phred-scaled normalized likelihoods of possible genotypes used in "GQ" confidence readout, with the most likely genotype 		being assigned a PL of 0.
 
   
  To do this, I need to accomplish the following:
- -iterate over each variant position in the vcf file
-  -for each variant, iterate over every sample to collect "ALT" allele frequency
+ 
+ 1) iterate over each variant position in the vcf file and sum the ALT (and total) alleles indicated by each sample GT
+ 	
+	-divide sum by total sample allele number per variant for ALT allele frequency and by per-sample allele number (2) for sample 		frequency
+	
+ 2) for each variant, iterate over every sample to collect ALT (and total) AD and DP read counts 
+ 	
+	-divide each sample's respective ALT read counts by total read counts for raw ALT frequency (AD) and coverage (DP)
+	-output values
+
 
 
 [vcf]: https://github.com/jshwaa/EE283_Week7/blob/EE283_Final/Alignment/DNAseq_SangerConvertandAlign/EE283_Final/vcf_format.png
