@@ -10,11 +10,11 @@ The vcf format is as follows:
 
 ![vcf_format.png][vcf]
 
-The key-value pair legend in red indicates the relevant information:
+The key-value pair legend in red indicates the relevant "genotype field" information for each sample:
 
-	-GT:
-	-AD:
-	-DP:
+	-GT: Genotype; 0=REF allele, 1=first ALT allele, 2=2nd ALT allele, etc (i.e. 0/0 homozygous REF, 1/1 homozygous ALT)
+	-AD: Allele depth (unfiltered # of reads supporoting each allele except uninformative reads)
+	-DP: Depth of coverage/filtered depth (#filtered reads supporting each allele including uninformative reads)
 	-GQ:
 	-PL:
 
