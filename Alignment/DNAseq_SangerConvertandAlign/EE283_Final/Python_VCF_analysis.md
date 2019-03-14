@@ -30,6 +30,10 @@ The key-value pair legend in red indicates the relevant "genotype field" informa
 	-divide each sample's respective ALT read counts by total read counts for raw ALT frequency (AD) and coverage (DP)
 	-output values
 
+First, remove VCF header and comments and cut relevant record fields at the command line to make a txt file for python:
+```
+$ grep -v "^##" pass.SNPs.vcf | cut -f1,2,4,5,6,10,11,12,13,14,15,16,17,18,19,20,21 | cat > sample_alleles.txt
+```
 
 
 [vcf]: https://github.com/jshwaa/EE283_Week7/blob/EE283_Final/Alignment/DNAseq_SangerConvertandAlign/EE283_Final/vcf_format.png
