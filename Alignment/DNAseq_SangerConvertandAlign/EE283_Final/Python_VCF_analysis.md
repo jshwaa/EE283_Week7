@@ -25,12 +25,13 @@ The key-value pair legend in red indicates the relevant "genotype field" informa
  i) iterate over each variant position in the vcf file and sum the ALT (and total) alleles indicated by each sample GT
  	
 	-divide ALT allele sum by total allele sum across samples per variant for ALT allele frequency 
-	-replace GT:AD:DP:GQ:PL sample information with each sample's ALT allele frequency (reported as # ALT alleles out of the diploid 	2)
+	-replace GT:AD:DP:GQ:PL sample information with each sample's ALT allele frequency (reported as # ALT alleles out of the diploid 2)
 	
 	
  ii) for each variant, iterate over every sample to collect ALT (and total) AD and DP read counts 
  	
 	-divide each sample's ALT read counts by total read counts for ALT frequency (using AD), and report each sample's coverage (DP)
+
 
 
 First, remove VCF header and comments and cut relevant record fields at the command line to make a txt file for python:
