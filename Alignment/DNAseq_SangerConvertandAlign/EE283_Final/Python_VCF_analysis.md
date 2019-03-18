@@ -115,6 +115,6 @@ Now, use a second for loop to iterate over every sample for each variant and rep
 f.close   
 ```
 
-After closing the document, this python script will have generated a .txt file characterization alternate allele genotype and read frequencies within and across samples using data stored within VCF files (here saved as "ALT_allele_quant.txt", 10 lines of which are included in the repository). 
+After closing the file (f.close()), this python script will have generated a .txt file characterizing alternate allele genotypes and read frequencies within and across samples using data stored in a VCF file, alongside the original positional and REF/ALT nucleotide information (results here saved as "ALT_allele_quant.txt", 10 lines of which are included in the repository).
 
 [vcf]: https://github.com/jshwaa/EE283_Week7/blob/EE283_Final/Alignment/DNAseq_SangerConvertandAlign/EE283_Final/vcf_format.png
