@@ -24,6 +24,7 @@ The key-value pair legend in red indicates the relevant "genotype field" informa
  1) iterate over each variant position in the vcf file and sum the ALT (and total) alleles indicated by each sample GT
  	
 	-divide ALT allele sum by total sample allele number per variant for ALT allele frequency and append to line as new column
+	
 	-replace GT:AD:DP:GQ:PL sample information with each sample's ALT allele frequency
 	
  2) for each variant, iterate over every sample to collect ALT (and total) AD and DP read counts 
