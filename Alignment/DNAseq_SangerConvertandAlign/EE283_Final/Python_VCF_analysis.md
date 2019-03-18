@@ -83,7 +83,7 @@ for i in lines[1:]:
     f.write("{}\t{}\t{}\t{}\t{}\t".format(CHROM, POS_allele, REF_allele, ALT_allele, QUAL))
 ```    
 
-Now, use a second for loop to iterate over every sample for each variant and report the # of ALT alleles out of 2, the frequency of ALT reads out of all unfiltered reads (from AD), and the depth of coverage (from DP). At the same time, use a variable to store cumulative ALT counts over each sample iteration and report the total ALT allele count and frequency across all samples at the end of the record.
+Now, use a second for loop to iterate over every sample for each variant and report the # of ALT alleles out of 2, the frequency of ALT reads out of all unfiltered reads (from AD), and the depth of coverage (from DP). At the same time, use a variable to store cumulative ALT counts over each sample iteration and report the total ALT allele count and frequency across all samples at the end of the record. Similarly, use a rolling variable ("POS" here) so that each successive line from the VCF file is appended to the new file after analysis (rather than replacing the output of the last iteration of the for loop i.e. the previous record)
 
 ```
     for j in range(5, numsamples+5):
