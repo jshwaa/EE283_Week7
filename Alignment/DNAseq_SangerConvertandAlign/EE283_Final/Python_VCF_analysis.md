@@ -13,7 +13,7 @@ The vcf format is as follows:
 The key-value pair legend in red indicates the relevant "genotype field" information for each sample:
 
 	-GT: Genotype; 0=REF allele, 1=first ALT allele, 2=2nd ALT allele, etc (i.e. 0/0 homozygous REF, 1/1 homozygous ALT)
-	-AD: Allele depth (unfiltered # of reads supporoting each allele except uninformative reads)
+	-AD: Allele depth (unfiltered # of reads supporting each allele except uninformative reads)
 	-DP: Depth of coverage/filtered depth (#filtered reads supporting each allele including uninformative reads)
 	-GQ: Phred-scaled confidence of genotype assignment, normalized to the most likely genotype
 	-PL: Phred-scaled normalized likelihoods of possible genotypes used in "GQ" confidence readout, with the most likely genotype 		being assigned a PL of 0.
@@ -23,12 +23,12 @@ The key-value pair legend in red indicates the relevant "genotype field" informa
  
  1) iterate over each variant position in the vcf file and sum the ALT (and total) alleles indicated by each sample GT
  	
-	-divide sum by total sample allele number per variant for ALT allele frequency and by per-sample allele number (2) for sample 		frequency
+	-divide ALT allele sum by total sample allele number per variant for ALT allele frequency and append to line as new column
+	-replace GT:AD:DP:GQ:PL sample information with each sample's ALT allele frequency
 	
  2) for each variant, iterate over every sample to collect ALT (and total) AD and DP read counts 
  	
 	-divide each sample's respective ALT read counts by total read counts for raw ALT frequency (AD) and coverage (DP)
-	-output values
 
 First, remove VCF header and comments and cut relevant record fields at the command line to make a txt file for python:
 ```
