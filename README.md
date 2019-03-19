@@ -8,7 +8,7 @@ ATACseq pipeline and scripts contained in EE283_Week7/Alignment/ATACseq_align
 
 Final project consisted of creating a python script to extract and summarize ALT allele frequencies from VCF files generated from the DNAseq pipeline built here. The markdown document and accompanying script can be found in EE283_Week7/Alignment/DNAseq_SangerConvertandAlign/EE283_Final
 
-# Summary of final project (from the markdown document EE283_Final/Python_VCF_analysis.md
+# Summary of final project (from the markdown document EE283_Final/Python_VCF_analysis.md)
 
 # EE283 Final Project
 
